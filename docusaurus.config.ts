@@ -70,64 +70,11 @@ const config: Config = {
           position: 'left',
           label: 'Textbook',
         },
-        {
-          to: '/signin',
-          label: 'Sign In',
-          position: 'right',
-          className: 'button button--secondary navbar-button',
-        },
-        {
-          to: '/signup',
-          label: 'Sign Up',
-          position: 'right',
-          className: 'button button--primary navbar-button',
-        },
       ],
     },
-    footer: {
-      style: 'dark',
-      links: [
-        {
-          title: 'Project Info',
-          items: [
-            {
-              label: 'About Us',
-              to: '/about',
-            },
-            {
-              label: 'Contact',
-              to: '/contact',
-            },
-          ],
-        },
-        {
-          title: 'Quick Links',
-          items: [
-            {
-              label: 'Textbook',
-              to: '/docs/intro',
-            },
-            {
-              label: 'Modules',
-              to: '/modules',
-            },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/gemini-hackathon',
-            },
-            {
-              label: 'Discord',
-              href: 'https://discord.gg/gemini-hackathon',
-            },
-          ],
-        },
-      ],
-      copyright: `Copyright © ${new Date().getFullYear()} Gemini Textbook. All rights reserved.`,
+        footer: {
+          style: 'dark',
+          links: [],      copyright: `Copyright © ${new Date().getFullYear()} Gemini Textbook. All rights reserved.`,
     },
     prism: {
       darkTheme: prismThemes.dracula,

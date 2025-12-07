@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+langchain
+langchain-community
+sentence-transformers
+faiss-cpu
+pydantic
+python-dotenv
+unstructured
+markdown
+bs4
+langchain-huggingface
+glob2
+pymupdf
+passlib[bcrypt] # For password hashing
+python-jose[cryptography] # For JWT tokens

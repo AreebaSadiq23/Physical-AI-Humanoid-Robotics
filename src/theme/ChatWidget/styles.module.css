@@ -1,0 +1,210 @@
+.chatWidgetContainer {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.chatToggleButton {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, var(--ifm-color-primary), var(--ifm-color-secondary));
+  border: none;
+  color: var(--ifm-font-color-base-inverse);
+  font-size: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: var(--glow-color-cyan);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.chatToggleButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 15px var(--ifm-color-primary-light), inset 0 0 10px var(--ifm-color-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chatToggleButton:hover::before {
+  opacity: 1;
+}
+
+.chatToggleButton:hover {
+  transform: scale(1.05);
+  box-shadow: var(--glow-color-blue);
+}
+
+.chatToggleButtonOpen {
+  background: var(--ifm-background-color-light); /* Darker when open */
+  color: var(--ifm-color-primary);
+  box-shadow: var(--glow-color-blue);
+}
+
+.chatToggleButtonOpen::before {
+  opacity: 0; /* Remove inner glow when open */
+}
+
+.chatWindow {
+  position: absolute;
+  bottom: 80px; /* Above the toggle button */
+  right: 0;
+  width: 350px;
+  height: 450px;
+  background-color: var(--ifm-background-color-light);
+  border: 1px solid var(--ifm-color-secondary-dark);
+  border-radius: 10px;
+  box-shadow: var(--glow-color-cyan);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(100%) scale(0.8);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.chatWindowOpen {
+  transform: translateY(0%) scale(1);
+  opacity: 1;
+  pointer-events: all;
+}
+
+.chatHeader {
+  background-color: var(--ifm-color-primary-darkest);
+  color: var(--ifm-font-color-base-inverse);
+  padding: 0.8rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--ifm-color-primary-dark);
+}
+
+.chatCloseButton {
+  background: none;
+  border: none;
+  color: var(--ifm-font-color-base-inverse);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.chatCloseButton:hover {
+  color: var(--ifm-color-primary-light);
+}
+
+.chatMessages {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  background-color: var(--ifm-background-color);
+  border-bottom: 1px solid var(--ifm-color-secondary-dark);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chatWelcome {
+  text-align: center;
+  color: var(--ifm-font-color-base);
+  opacity: 0.7;
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+
+.chatMessage {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
+  font-size: 0.9rem;
+}
+
+.chatMessage.user {
+  align-self: flex-end;
+  background-color: var(--ifm-color-secondary-dark);
+  color: var(--ifm-font-color-base-inverse);
+  border-bottom-right-radius: 2px;
+}
+
+.chatMessage.bot {
+  align-self: flex-start;
+  background-color: var(--ifm-background-color-light);
+  color: var(--ifm-font-color-base);
+  border: 1px solid var(--ifm-color-primary-darkest);
+  border-bottom-left-radius: 2px;
+}
+
+.chatInputContainer {
+  display: flex;
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--ifm-color-secondary-dark);
+  background-color: var(--ifm-background-color-light);
+}
+
+.chatInput {
+  flex-grow: 1;
+  padding: 0.6rem;
+  border: 1px solid var(--ifm-color-primary-dark);
+  border-radius: 5px;
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  margin-right: 0.5rem;
+}
+
+.chatInput:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary-light);
+  box-shadow: 0 0 5px var(--ifm-color-primary-light);
+}
+
+.chatInput::placeholder {
+  color: var(--ifm-font-color-base);
+  opacity: 0.6;
+}
+
+.chatSendButton {
+  background: linear-gradient(45deg, var(--ifm-color-primary), var(--ifm-color-secondary));
+  border: none;
+  color: var(--ifm-font-color-base-inverse);
+  padding: 0.6rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--glow-color-blue);
+}
+
+.chatSendButton:hover {
+  opacity: 0.9;
+  box-shadow: var(--glow-color-cyan);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chatWidgetContainer {
+    bottom: 10px;
+    right: 10px;
+  }
+  .chatWindow {
+    width: 300px;
+    height: 400px;
+    bottom: 70px;
+  }
+  .chatToggleButton {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+}
+

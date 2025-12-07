@@ -1,0 +1,147 @@
+/**
+ * CSS styles for the homepage (src/pages/index.tsx)
+ */
+
+.heroBanner {
+  padding: 6rem 0;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--ifm-background-color); /* Ensure dark background */
+  color: #ffffff; /* All text white */
+  border-bottom: 2px solid var(--ifm-color-secondary-dark);
+  box-shadow: var(--glow-color-cyan);
+  display: flex; /* Use flexbox for main layout */
+  align-items: center; /* Vertically align content */
+  justify-content: center; /* Center content horizontally */
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 4rem 0;
+  }
+  .heroTextColumn {
+    text-align: center;
+    align-items: center;
+  }
+  /* Remove display: none for heroImageColumn to ensure responsiveness */
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+}
+
+.heroTitle {
+  font-size: 4.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+  color: #ffffff; /* Explicitly white */
+  text-shadow: var(--glow-color-blue);
+}
+
+.heroSubtitle {
+  font-size: 1.8rem;
+  margin-bottom: 2.5rem;
+  opacity: 0.9; /* Slightly less opaque white for subtitle */
+  color: #ffffff; /* Explicitly white */
+}
+
+.heroTextColumn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.heroImageColumn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: var(--ifm-spacing-horizontal); /* Add some spacing from text */
+}
+
+.heroImage {
+  max-width: 100%; /* Ensure image is responsive */
+  height: auto;
+  border-radius: 20px;
+  box-shadow: var(--glow-color-cyan);
+  border: 1px solid var(--ifm-color-secondary-dark);
+}
+
+.heroButton {
+  margin-top: 1.5rem;
+  padding: 0.8rem 2rem;
+  font-size: 1.2rem;
+  background-color: var(--ifm-color-primary); /* Blue/Cyan accent */
+  color: #ffffff; /* White text on button */
+  border: none;
+  border-radius: var(--ifm-button-border-radius);
+  transition: background-color 0.3s ease;
+}
+
+.heroButton:hover {
+  background-color: var(--ifm-color-primary-dark); /* Darker shade on hover */
+  text-decoration: none; /* Remove underline on hover */
+  color: #ffffff;
+}
+
+/* Modules Section */
+.modules {
+  padding: 6rem 0;
+  background-color: var(--ifm-background-color); /* Ensure dark background */
+}
+
+.modules .row { /* Target the row specifically within the modules section */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Center cards horizontally */
+  align-items: stretch; /* Ensure cards in a row have equal height */
+  gap: 2rem; /* Increased gap for better spacing */
+  margin-left: 0; /* Override default negative margin */
+  margin-right: 0; /* Override default negative margin */
+}
+
+.modules .row > .col { /* Adjust column padding to work with gap */
+  padding: 0; /* Remove default padding from cols as gap handles spacing */
+  display: flex; /* Make col a flex container to align card properly */
+  justify-content: center;
+  flex-basis: calc(50% - 1rem); /* Two cards per row on desktop with gap */
+  max-width: calc(50% - 1rem); /* Ensure two cards per row */
+}
+
+@media screen and (max-width: 768px) { /* Adjust for smaller screens */
+  .modules .row > .col {
+    flex-basis: 100%; /* One card per row on mobile */
+    max-width: 100%;
+  }
+}
+
+.modulesHeader {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.modulesTitle {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #ffffff; /* Explicitly white */
+  text-shadow: var(--glow-color-blue);
+}
+
+/* Module item animation */
+.moduleItem {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.moduleItemVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Base Card Styles - these will be mostly overridden by CyberCard */
+/* Removed previous .moduleCard styles as CyberCard handles it */

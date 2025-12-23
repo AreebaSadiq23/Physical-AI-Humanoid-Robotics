@@ -5,11 +5,4 @@ title: Hardware & Infrastructure
 
 # Hardware & Infrastructure
 
-- **Digital Twin Workstation**
-- **Physical AI Edge Kit**
-- **Robot Lab**
-  - Proxy approach
-  - Miniature humanoid
-  - Premium lab
-- **Architecture summary**
-- **Cloud (Ether Lab)**
+Detailed content for this section, covering Digital Twin Workstation, Physical AI Edge Kit, Robot Lab, Architecture summary, and Cloud (Ether Lab), is currently under development. Please check back later for comprehensive updates.

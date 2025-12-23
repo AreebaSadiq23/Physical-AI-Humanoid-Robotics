@@ -1,0 +1,141 @@
+/*
+ * @file: src/components/RoboticHero/styles.module.css
+ * @description: Styles for the futuristic robotic hero section.
+ */
+
+.heroSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4rem 2rem;
+  background: var(--background-main);
+  min-height: 80vh;
+  width: 100%;
+  gap: 2rem;
+}
+
+.leftPanel {
+  flex: 1;
+  max-width: 50%;
+  padding-right: 2rem;
+}
+
+.leftPanel h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.leftPanel p {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+}
+
+.ctaButton {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 1rem 2.5rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.rightPanel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.robotAnimation {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+}
+
+.robotAnimation .robot-part {
+  fill: #1a2c4a;
+  stroke: var(--accent-cyan);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 5px var(--glow-color));
+  transform-origin: center center;
+}
+
+/* Animations for Robot Parts */
+@keyframes assemble-torso {
+  0% { transform: translateY(100px) scale(0.8); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes assemble-head {
+  0% { transform: translateY(-80px) rotate(-30deg); opacity: 0; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes assemble-left-arm {
+  0% { transform: translateX(-100px) rotate(45deg); opacity: 0; }
+  100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes assemble-right-arm {
+  0% { transform: translateX(100px) rotate(-45deg); opacity: 0; }
+  100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes assemble-legs {
+  0% { transform: translateY(120px) scaleY(0.5); opacity: 0; }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+@keyframes pulse-glow-main {
+  0%, 100% { filter: drop-shadow(0 0 5px var(--glow-color)); }
+  50% { filter: drop-shadow(0 0 15px var(--glow-color)); }
+}
+
+.torso {
+  animation: assemble-torso 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.head {
+  animation: assemble-head 1s cubic-bezier(0.25, 1, 0.5, 1) 0.8s forwards;
+}
+
+.left-arm {
+  animation: assemble-left-arm 1s cubic-bezier(0.25, 1, 0.5, 1) 1.2s forwards;
+}
+
+.right-arm {
+  animation: assemble-right-arm 1s cubic-bezier(0.25, 1, 0.5, 1) 1.2s forwards;
+}
+
+.legs {
+  animation: assemble-legs 1.2s cubic-bezier(0.25, 1, 0.5, 1) 0.4s forwards;
+}
+
+.eye {
+  fill: var(--accent-cyan);
+  animation: pulse-glow-main 3s infinite 2s;
+}
+
+/* Responsive Design */
+@media (max-width: 996px) {
+  .heroSection {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .leftPanel {
+    max-width: 100%;
+    padding-right: 0;
+    margin-bottom: 3rem;
+  }
+
+  .rightPanel {
+    width: 80%;
+  }
+}

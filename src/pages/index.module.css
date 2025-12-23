@@ -1,0 +1,130 @@
+/* ================= Hero Section ================= */
+.heroBanner {
+  padding: 6rem 0;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--ifm-background-color);
+  color: #ffffff;
+  border-bottom: 2px solid var(--ifm-color-secondary-dark);
+  box-shadow: var(--glow-color-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 4rem 0;
+  }
+  .heroTextColumn {
+    text-align: center;
+    align-items: center;
+  }
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+}
+
+.heroTitle {
+  font-size: 4.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+  color: #ffffff;
+  text-shadow: var(--glow-color-blue);
+}
+
+.heroSubtitle {
+  font-size: 1.8rem;
+  margin-bottom: 2.5rem;
+  opacity: 0.9;
+  color: #ffffff;
+}
+
+.heroTextColumn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.heroImageColumn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: var(--ifm-spacing-horizontal);
+}
+
+.heroButton {
+  margin-top: 1.5rem;
+  padding: 0.8rem 2rem;
+  font-size: 1.2rem;
+  background-color: var(--ifm-color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--ifm-button-border-radius);
+  transition: background-color 0.3s ease;
+}
+
+.heroButton:hover {
+  background-color: var(--ifm-color-primary-dark);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* ================= Modules Section ================= */
+.modules {
+  padding: 6rem 0;
+  background-color: var(--ifm-background-color);
+}
+
+.modulesHeader {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.modulesTitle {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: var(--glow-color-blue);
+}
+
+/* ---------------- Grid Layout for Modules ---------------- */
+.modulesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(300px, 1fr)); /* 2 cards side by side */
+  gap: 2rem;
+  align-items: stretch;
+  justify-content: center; /* center cards in large screens */
+  max-width: 1200px;       /* restrict overall grid width */
+  margin: 0 auto;
+}
+
+@media screen and (max-width: 1024px) {
+  .modulesGrid {
+    grid-template-columns: repeat(2, 1fr); /* 2-column layout for medium screens */
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .modulesGrid {
+    grid-template-columns: 1fr; /* 1 card per row on mobile */
+  }
+}
+
+/* ---------------- Module Animation ---------------- */
+.moduleItem {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.moduleItemVisible {
+  opacity: 1;
+  transform: translateY(0);
+}

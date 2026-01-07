@@ -1,0 +1,74 @@
+/* src/components/UserNavItems/styles.module.css */
+
+.avatarContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--ifm-navbar-height);
+  margin-left: 1rem; /* Adjust as needed */
+}
+
+.avatarButton {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ifm-navbar-height);
+  color: var(--ifm-navbar-link-color);
+}
+
+.avatarButton:hover {
+  color: var(--ifm-navbar-link-hover-color);
+}
+
+.userAvatar {
+  width: 2rem; /* Adjust size as needed */
+  height: 2rem; /* Adjust size as needed */
+  border-radius: 50%;
+  background-color: var(--ifm-color-primary); /* Use a primary color */
+  color: var(--ifm-font-color-inverse); /* White text */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1rem; /* Adjust font size as needed */
+  transition: background-color 0.2s ease-in-out;
+}
+
+.avatarButton:hover .userAvatar {
+  background-color: var(--ifm-color-primary-dark);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: var(--ifm-navbar-height); /* Position below the navbar */
+  right: 0;
+  background-color: var(--ifm-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: var(--ifm-border-radius);
+  box-shadow: var(--ifm-shadow-md);
+  min-width: 120px;
+  z-index: 1000; /* Ensure it appears above other content */
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdownItem {
+  padding: 0.5rem 1rem;
+  text-align: left;
+  border: none;
+  background: none;
+  width: 100%;
+  cursor: pointer;
+  color: var(--ifm-font-color-base);
+  text-decoration: none; /* For button styling, but acts as a link */
+  display: block; /* Ensure it takes full width */
+}
+
+.dropdownItem:hover {
+  background-color: var(--ifm-hover-background-color);
+  color: var(--ifm-hover-link-color);
+}

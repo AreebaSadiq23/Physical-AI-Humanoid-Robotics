@@ -1,0 +1,104 @@
+/**
+ * @file: src/css/custom.css
+ * @description: Global styles for the robotic-themed notebook.
+ */
+
+/* Import a futuristic font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Chakra+Petch:wght@400;600&display=swap');
+
+:root {
+  /* Color Palette */
+  --ifm-color-primary: #00e0f3; /* Bright Cyan */
+  --ifm-color-primary-dark: #00c4d6;
+  --ifm-color-primary-darker: #00b8c9;
+  --ifm-color-primary-darkest: #0098a5;
+  --ifm-color-primary-light: #00fcfc;
+  --ifm-color-primary-lighter: #12ffff;
+  --ifm-color-primary-lightest: #34ffff;
+  
+  --ifm-background-color: #0a0f1e;
+  --ifm-font-color-base: #e0e7ff;
+
+  /* Custom Robotic Theme Variables */
+  --background-main: #0a0f1e;
+  --background-card: #12182b;
+  --background-panel: #1a1c2c;
+  --accent-cyan: #00e0f3;
+  --accent-purple: #a45eff;
+  --accent-purple-rgb: 164, 94, 255; /* RGB equivalent for rgba functions */
+  --accent-pink: #eb2d8c;
+  --text-primary: #e0e7ff;
+  --text-secondary: #a0a7c4;
+  --border-color: #2a304d;
+  --glow-color: rgba(0, 224, 243, 0.7);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+
+  --ifm-color-success: #6bff6b; /* Vibrant green for success messages */
+
+  /* Set base fonts */
+  --ifm-font-family-base: 'Chakra Petch', sans-serif;
+  --ifm-font-family-monospace: 'Orbitron', monospace;
+  --ifm-heading-font-family: 'Orbitron', sans-serif;
+}
+
+/* Apply dark theme to the entire page */
+body {
+  background-color: var(--background-main);
+  color: var(--text-primary);
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1c2c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+  border: 2px solid #1a1c2c;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* Headings style */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--accent-cyan);
+  text-shadow: 0 0 5px rgba(0, 224, 243, 0.4);
+}
+
+/* Base styles for buttons and inputs that can be used globally */
+.button--primary {
+  background-color: transparent;
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 224, 243, 0.3);
+}
+
+.button--primary:hover {
+  background-color: var(--accent-cyan);
+  color: var(--background-main);
+  box-shadow: 0 0 20px var(--glow-color);
+}
+
+.input-field {
+  background-color: var(--background-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.input-field:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--glow-color);
+  outline: none;
+}

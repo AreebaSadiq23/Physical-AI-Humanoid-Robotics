@@ -222,5 +222,244 @@ VLA ماڈلز میں لینگویج ماڈیول روبوٹس کو قدرتی �
 
 
 
+---
 
+## Chapter 3: Voice-to-Action with OpenAI Whisper
 
+A key part of making robots intuitive to use is allowing them to understand spoken commands. **Voice-to-Action** is the process of converting a human's spoken words into executable robot actions. A critical first step in this process is accurate Speech-to-Text transcription, and **OpenAI's Whisper** is a state-of-the-art model for this task.
+
+### OpenAI Whisper کیا ہے؟
+
+Whisper ایک خودکار اسپیچ ریکگنیشن (ASR) ماڈل ہے جسے OpenAI نے تیار کیا ہے۔ اسے انٹرنیٹ سے 680,000 گھنٹے کے کثیر لسانی اور کثیر ٹاسک سپروائزڈ ڈیٹا پر تربیت دی گئی ہے۔ یہ وسیع تربیت اسے مختلف لہجوں، پس منظر کے شور، اور تکنیکی زبان کے خلاف انتہائی مضبوط بناتی ہے، جو اسے روبوٹکس ایپلی کیشنز کے لیے ایک بہترین انتخاب بناتی ہے۔
+
+### The Voice-to-Action Pipeline
+
+A simple Voice-to-Action pipeline using Whisper and ROS 2 would look like this:
+
+1.  **Audio Capture:** A ROS 2 node listens to a microphone connected to the robot (or the operator's computer) and captures audio data.
+2.  **Speech-to-Text:** The audio data is sent to the Whisper model (either running locally or via an API). Whisper transcribes the audio into a text string.
+3.  **Publish Command:** The resulting text string (e.g., "move forward") is published as a ROS 2 message, typically a `std_msgs/msg/String`, to a specific topic like `/voice_command`.
+4.  **Cognitive Planning:** A separate "Cognitive Planning" node (discussed in the next chapter) subscribes to the `/voice_command` topic. It receives the text command and decides what to do next.
+
+### Example: A ROS 2 Node for Whisper Integration
+
+Below is a conceptual Python script for a ROS 2 node that captures audio, uses the `openai-whisper` library to perform transcription, and publishes the result.
+
+**Prerequisites:**
+-   You need a microphone configured on your system.
+-   Install the necessary Python libraries: `pip install openai-whisper sounddevice scipy`
+
+```python
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+import sounddevice as sd
+from scipy.io.wavfile import write
+import whisper
+import os
+
+class VoiceCommandNode(Node):
+    def __init__(self):
+        super().__init__('voice_command_node')
+        self.publisher_ = self.create_publisher(String, '/voice_command', 10)
+        self.get_logger().info("Voice Command Node Started. Say 'Hey Robot' to activate.")
+        self.is_listening = False
+        
+        # Load the Whisper model
+        self.model = whisper.load_model("base.en")
+
+    def listen_for_commands(self):
+        while rclpy.ok():
+            self.get_logger().info("Listening for activation phrase...")
+            # Record audio until silence is detected (this is a simplified example)
+            # A real implementation would use a more robust wake-word engine.
+            audio = self.record_audio(duration=5, sample_rate=16000)
+            
+            # Save audio to a temporary file
+            temp_file = "temp_audio.wav"
+            write(temp_file, 16000, audio)
+            
+            # Transcribe the audio
+            result = self.model.transcribe(temp_file)
+            text = result["text"].lower().strip()
+            self.get_logger().info(f"Heard: '{text}'")
+
+            # Simple wake-word detection
+            if "hey robot" in text or "hi robot" in text:
+                self.get_logger().info("Robot activated! Listening for command.")
+                # Record the actual command
+                command_audio = self.record_audio(duration=5, sample_rate=16000)
+                write(temp_file, 16000, command_audio)
+                
+                # Transcribe the command
+                command_result = self.model.transcribe(temp_file)
+                command_text = command_result["text"].strip()
+                
+                if command_text:
+                    self.get_logger().info(f"Publishing command: '{command_text}'")
+                    msg = String()
+                    msg.data = command_text
+                    self.publisher_.publish(msg)
+            
+            os.remove(temp_file)
+
+    def record_audio(self, duration, sample_rate):
+        self.get_logger().info("Recording...")
+        audio = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1)
+        sd.wait()  # Wait until recording is finished
+        self.get_logger().info("Recording finished.")
+        return audio.flatten()
+
+def main(args=None):
+    rclpy.init(args=args)
+    voice_node = VoiceCommandNode()
+    try:
+        voice_node.listen_for_commands()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        voice_node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+**Note:** This is a simplified example. A production-grade system would use a more efficient wake-word engine (like Porcupine or Picovoice) instead of transcribing all audio just to listen for an activation phrase.
+
+---
+
+## Chapter 4: Cognitive Planning with LLMs
+
+Once a robot has received a natural language command (e.g., from Whisper), the next step is **Cognitive Planning**: translating that high-level instruction into a concrete sequence of actions the robot can execute. This is where Large Language Models (LLMs) have shown incredible potential.
+
+### LLMs کو روبوٹکس کے لیے کیوں استعمال کریں؟
+
+LLMs, جیسے کہ GPT-4، کو وسیع پیمانے پر ٹیکسٹ ڈیٹا پر تربیت دی گئی ہے، جو انہیں دنیا کے بارے میں ایک وسیع عام فہم اور استدلال کی صلاحیتیں فراہم کرتی ہے۔ روبوٹکس میں، ہم اس کا فائدہ اٹھا سکتے ہیں:
+
+-   **Decomposition:** Breaking down complex, ambiguous commands into smaller, logical steps. For example, the command "Clean the room" can be decomposed into: 1. Find the trash. 2. Pick up the trash. 3. Go to the trash can. 4. Dispose of the trash.
+-   **Grounding:** Linking abstract concepts in language ("the blue cup") to specific objects the robot perceives in its environment.
+-   **Error Handling:** Generating recovery strategies when something goes wrong (e.g., "If you can't find the cup, ask the user for help").
+-   **Tool Use:** Determining which of the robot's available skills or "tools" (e.g., `navigateTo`, `pickUp`, `place`) should be used to accomplish a task.
+
+### The Cognitive Planning Pipeline
+
+A typical cognitive planning system using an LLM and ROS 2 works as follows:
+
+1.  **Input:** A ROS 2 node (the "Planner Node") subscribes to the `/voice_command` topic and receives a text command.
+2.  **Prompt Engineering:** The Planner Node constructs a detailed prompt for the LLM. This prompt is critical and usually includes:
+    -   The user's command.
+    -   Information about the current environment (e.g., a list of objects detected by the vision system).
+    -   A list of the robot's available actions or "skills" (e.g., `navigate_to(location)`, `pick_up(object)`).
+    -   A desired output format (e.g., JSON, or a Python script).
+3.  **LLM Inference:** The prompt is sent to the LLM via its API.
+4.  **Plan Parsing:** The LLM returns a plan, which is a sequence of actions. The Planner Node parses this output.
+5.  **Action Execution:** The Planner Node then executes the plan by making ROS 2 service or action calls to the respective robot controllers. For example, it might call the `navigate_to` action server from Nav2 or the `pick_up` action server for the robot's arm.
+
+### Example: Decomposing "Clean the room"
+
+**Planner Node receives command:** `"Clean the room"`
+
+**Constructed Prompt for LLM:**
+```
+You are a helpful robot assistant. Your task is to take a user's command and convert it into a sequence of simple actions that you can perform.
+
+The user's command is: "Clean the room"
+
+Here is what you see in the room: ['soda_can', 'banana_peel', 'book', 'trash_can']
+
+Here are the actions you can perform:
+1. navigate_to(object_name)
+2. pick_up(object_name)
+3. place(object_name, destination_name)
+
+Based on the user's command and what you see, provide a plan as a JSON list of actions. The only valid objects for your actions are the ones you see. Only place trash into the trash_can.
+```
+
+**LLM's Expected JSON Output:**
+```json
+[
+  {
+    "action": "navigate_to",
+    "parameters": ["soda_can"]
+  },
+  {
+    "action": "pick_up",
+    "parameters": ["soda_can"]
+  },
+  {
+    "action": "navigate_to",
+    "parameters": ["trash_can"]
+  },
+  {
+    "action": "place",
+    "parameters": ["soda_can", "trash_can"]
+  },
+  {
+    "action": "navigate_to",
+    "parameters": ["banana_peel"]
+  },
+  {
+    "action": "pick_up",
+    "parameters": ["banana_peel"]
+  },
+  {
+    "action": "navigate_to",
+    "parameters": ["trash_can"]
+  },
+  {
+    "action": "place",
+    "parameters": ["banana_peel", "trash_can"]
+  }
+]
+```
+
+The Planner Node would then parse this JSON and execute each action sequentially, turning a vague command into a series of concrete robot behaviors.
+
+---
+
+## Chapter 5: Capstone Project - The Autonomous Humanoid
+
+The capstone project brings together all the concepts learned throughout this course into a final, integrated demonstration: creating an autonomous humanoid robot in simulation that can understand and act on voice commands.
+
+### Project Goal
+
+The primary goal is to build a complete system where a simulated humanoid robot can perform a "fetch and place" task based on a natural language voice command. This demonstrates the full loop from high-level human intent to low-level robotic action.
+
+### The Full Pipeline
+
+The project integrates all four modules of the course into a single, cohesive application:
+
+1.  **Module 4 (VLA - Voice Input):**
+    -   **Input:** The user gives a voice command like, "Hey robot, please get the red bottle from the table and place it on the counter."
+    -   **Voice-to-Text:** A ROS 2 node using **OpenAI Whisper** captures this audio, transcribes it into a text string, and publishes it to a `/voice_command` topic.
+
+2.  **Module 4 (VLA - Cognitive Planning):**
+    -   **High-Level Plan:** A "Cognitive Planner" node subscribes to `/voice_command`. It uses an **LLM (like GPT-4)** to decompose the command into a logical sequence of high-level tasks.
+    -   **Example Plan:**
+        1.  `NAVIGATE` to the 'table'.
+        2.  `DETECT` the 'red bottle'.
+        3.  `PICK_UP` the 'red bottle'.
+        4.  `NAVIGATE` to the 'counter'.
+        5.  `PLACE` the 'red bottle' on the 'counter'.
+
+3.  **Module 3 (AI-Robot Brain - Navigation & Perception):**
+    -   **Navigation Execution:** For each `NAVIGATE` task, the Cognitive Planner node sends a goal to the **Nav2** action server.
+        -   The custom humanoid planner and controller plugins (developed as part of the module) generate stable footstep plans and whole-body trajectories to move the robot.
+    -   **Perception Execution:** For the `DETECT` and `PICK_UP` tasks, **Isaac ROS GEMs** are used.
+        -   A hardware-accelerated object detection GEM identifies the 'red bottle' and its location.
+        -   This location is then used by the manipulation system.
+
+4.  **Module 1 & 2 (Robotic Nervous System & Digital Twin):**
+    -   **Robot Model:** The entire simulation runs in **NVIDIA Isaac Sim** or **Gazebo**, using a humanoid robot model defined by a **URDF**.
+    -   **ROS 2 Communication:** All the different components (Whisper node, LLM planner, Nav2, perception GEMs, robot controllers) communicate using the **ROS 2** framework (topics, services, and actions) that you mastered in Module 1. The robot's state (joint positions, sensor data) is published from the simulator to the ROS 2 network.
+
+### Assessment Criteria
+
+This capstone project will be evaluated on the successful integration and functioning of the end-to-end pipeline:
+
+-   **Voice Recognition:** Did the Whisper node correctly transcribe the voice command?
+-   **Cognitive Planning:** Did the LLM successfully decompose the command into a valid sequence of actions?
+-   **Navigation:** Did the humanoid successfully and stably navigate to the target locations using Nav2?
+-   **Perception:** Did the robot's vision system correctly identify the target object?
+-   **Manipulation:** Did the robot successfully pick up and place the object?
+-   **Overall Integration:** Did all the ROS 2 nodes and systems work together seamlessly to complete the task?

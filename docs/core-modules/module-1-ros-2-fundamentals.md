@@ -442,7 +442,7 @@ private:
 
 int main(int argc, char * argv[])
 {
-  rclcpp::init(argc, argv);
+  rclpy::init(argc, argv);
   rclcpp::spin(std::make_shared<PublisherNode>());
   rclcpp::shutdown();
   return 0;
@@ -669,7 +669,7 @@ private:
 
 int main(int argc, char * argv[])
 {
-  rclcpp::init(argc, argv);
+  rclpy::init(argc, argv);
   rclcpp::spin(std::make_shared<PublisherNode>());
   rclcpp::shutdown();
   return 0;
@@ -973,85 +973,6 @@ Run the client in another terminal, providing two numbers:
 ros2 run my_python_service_pkg client 3 4
 ```
 
-### پائتھن میں ROS 2 کلائنٹ بنانا
-
-**3. سروس کلائنٹ کی تعریف کریں (پائتھن):**
-سرور جیسی ہی ڈائریکٹری میں ایک اور پائتھن فائل (مثلاً، `add_two_ints_client.py`) بنائیں۔
-
-```python
-import sys
-import rclpy
-from rclpy.node import Node
-from example_interfaces.srv import AddTwoInts # سروس کی قسم درآمد کریں
-
-class AddTwoIntsClient(Node):
-
-    def __init__(self):
-        super().__init__('add_two_ints_client')
-        self.client = self.create_client(AddTwoInts, 'add_two_ints')
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.req = AddTwoInts.Request()
-
-    def send_request(self, a, b):
-        self.req.a = a
-        self.req.b = b
-        self.future = self.client.call_async(self.req)
-        rclpy.spin_until_future_complete(self, self.future)
-        return self.future.result()
-
-def main(args=None):
-    rclpy.init(args=args)
-    add_two_ints_client = AddTwoIntsClient()
-
-    if len(sys.argv) != 3:
-        add_two_ints_client.get_logger().info('Usage: ros2 run my_python_service_pkg add_two_ints_client A B')
-        return
-
-    a = int(sys.argv[1])
-    b = int(sys.argv[2])
-    response = add_two_ints_client.send_request(a, b)
-    add_two_ints_client.get_logger().info(f'Result of add_two_ints: {response.sum}')
-
-    add_two_ints_client.destroy_node()
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
-```
-
-**4. `setup.py` کو اپ ڈیٹ کریں:**
-اپنی `my_python_service_pkg` کے `setup.py` میں `entry_points` ڈکشنری کے اندر اپنے ایکزیکیوٹیبلز کے لیے انٹری پوائنٹس شامل کریں۔
-
-```python
-entry_points={
-    'console_scripts': [
-        'server = my_python_service_pkg.add_two_ints_server:main',
-        'client = my_python_service_pkg.add_two_ints_client:main',
-    ],
-},
-```
-
-**5. بنائیں اور چلائیں (پائتھن سروس):**
-اپنی ورک اسپیس کی روٹ (`ros2_ws`) پر جائیں اور بنائیں:
-
-```bash
-colcon build --packages-select my_python_service_pkg
-source install/setup.bash
-```
-
-ایک ٹرمینل میں سرور چلائیں:
-
-```bash
-ros2 run my_python_service_pkg server
-```
-
-دوسرے ٹرمینل میں کلائنٹ چلائیں، دو نمبر فراہم کریں:
-
-```bash
-ros2 run my_python_service_pkg client 3 4
-```
-
 ### Creating a ROS 2 Service in C++
 
 This example also uses the `AddTwoInts` service.
@@ -1234,101 +1155,6 @@ ros2 run my_cpp_service_pkg server
 ```
 
 Run the client in another terminal, providing two numbers:
-
-```bash
-ros2 run my_cpp_service_pkg client 5 6
-```
-
-### سی++ میں ROS 2 کلائنٹ بنانا
-
-**3. سروس کلائنٹ کی تعریف کریں (سی++):**
-`my_cpp_service_pkg/src` ڈائریکٹری میں ایک اور سی++ فائل (مثلاً، `add_two_ints_client.cpp`) بنائیں۔
-
-```cpp
-#include "rclcpp/rclcpp.hpp"
-#include "example_interfaces/srv/add_two_ints.hpp" // سروس کی قسم درآمد کریں
-
-#include <chrono>
-#include <cstdlib>
-#include <memory>
-
-using namespace std::chrono_literals;
-
-int main(int argc, char **argv)
-{
-  rclcpp::init(argc, argv);
-
-  if (argc != 3) {
-      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "usage: add_two_ints_client X Y");
-      return 1;
-  }
-
-  std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("add_two_ints_client");
-  rclcpp::Client<example_interfaces::srv::AddTwoInts>::SharedPtr client =
-    node->create_client<example_interfaces::srv::AddTwoInts>("add_two_ints");
-
-  auto request = std::make_shared<example_interfaces::srv::AddTwoInts::Request>();
-  request->a = atoll(argv[1]);
-  request->b = atoll(argv[2]);
-
-  while (!client->wait_for_service(1s)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-      return 0;
-    }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-  }
-
-  auto result = client->async_send_request(request);
-  // نتیجے کا انتظار کریں۔
-  if (rclcpp::spin_until_future_complete(node, result) ==
-    rclcpp::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sum: %ld", result.get()->sum);
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service add_two_ints");
-  }
-
-  rclcpp::shutdown();
-  return 0;
-}
-```
-
-**4. `CMakeLists.txt` کو اپ ڈیٹ کریں:**
-`my_cpp_service_pkg/CMakeLists.txt` میں، ایکزیکیوٹیبلز اور لنک ڈیپینڈنسیز شامل کریں:
-
-```cmake
-find_package(rclcpp REQUIRED)
-find_package(example_interfaces REQUIRED)
-
-add_executable(server src/add_two_ints_server.cpp)
-ament_target_dependencies(server rclcpp example_interfaces)
-
-add_executable(client src/add_two_ints_client.cpp)
-ament_target_dependencies(client rclcpp example_interfaces)
-
-install(TARGETS
-  server
-  client
-  DESTINATION lib/${PROJECT_NAME}
-)
-```
-
-**5. بنائیں اور چلائیں (سی++ سروس):**
-اپنی ورک اسپیس کی روٹ (`ros2_ws`) پر جائیں اور بنائیں:
-
-```bash
-colcon build --packages-select my_cpp_service_pkg
-source install/setup.bash
-```
-
-ایک ٹرمینل میں سرور چلائیں:
-
-```bash
-ros2 run my_cpp_service_pkg server
-```
-
-دوسرے ٹرمینل میں کلائنٹ چلائیں، دو نمبر فراہم کریں:
 
 ```bash
 ros2 run my_cpp_service_pkg client 5 6
@@ -1798,7 +1624,7 @@ ros2 run py_action_pkg fibonacci_server
 
 ### Creating an Action Client in Python
 
-The action client sends goal requests to the server, receives feedback, and processes the final result.
+The action client sends goal requests to the server, monitors feedback, and receives the final result.
 
 ```python
 import rclpy
@@ -1872,82 +1698,6 @@ source install/setup.bash
 ros2 run py_action_pkg fibonacci_client
 ```
 
-### پائتھن میں ایک ایکشن کلائنٹ بنانا
-
-ایکشن کلائنٹ گول کی درخواستیں سرور کو بھیجتا ہے، فیڈ بیک وصول کرتا ہے، اور حتمی نتیجہ پر کارروائی کرتا ہے۔
-
-```python
-import rclpy
-from rclpy.action import ActionClient
-from rclpy.node import Node
-
-from tutorial_interfaces.action import Fibonacci # اپنی ایکشن کی قسم درآمد کریں
-
-class FibonacciActionClient(Node):
-    def __init__(self):
-        super().__init__('fibonacci_action_client')
-        self._action_client = ActionClient(self, Fibonacci, 'fibonacci')
-
-    def send_goal(self, order):
-        goal_msg = Fibonacci.Goal()
-        goal_msg.order = order
-
-        self.get_logger().info('Waiting for action server...')
-        self._action_client.wait_for_server()
-
-        self.get_logger().info('Sending goal request...')
-        self._send_goal_future = self._action_client.send_goal_async(
-            goal_msg,
-            feedback_callback=self.feedback_callback
-        )
-        self._send_goal_future.add_done_callback(self.goal_response_callback)
-
-    def goal_response_callback(self, future):
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
-            return
-
-        self.get_logger().info('Goal accepted :)')
-        self._get_result_future = goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self.get_result_callback)
-
-    def get_result_callback(self, future):
-        result = future.result().result
-        self.get_logger().info(f'Result: {result.sequence}')
-        rclpy.shutdown()
-
-    def feedback_callback(self, feedback_msg):
-        self.get_logger().info(f'Received feedback: {feedback_msg.feedback.partial_sequence}')
-
-def main(args=None):
-    rclpy.init(args=args)
-    action_client = FibonacciActionClient()
-    action_client.send_goal(10) # مثال: آرڈر 10 تک فبونیکی ترتیب کی درخواست کریں۔
-    rclpy.spin(action_client)
-
-if __name__ == '__main__':
-    main()
-```
-
-**بنائیں اور چلائیں (پائتھن ایکشن کلائنٹ):**
-کلائنٹ کوڈ `py_action_pkg/py_action_pkg/fibonacci_client.py` میں رکھیں۔
-`py_action_pkg/setup.py` کے `entry_points` سیکشن کو اپ ڈیٹ کریں:
-```python
-entry_points={
-    'console_scripts': [
-        'fibonacci_server = py_action_pkg.fibonacci_server:main', # سرور انٹری کو برقرار رکھیں
-        'fibonacci_client = py_action_pkg.fibonacci_client:main',
-    ],
-},
-```
-پھر سرور چلنے کے بعد کلائنٹ کو بنائیں اور چلائیں:
-```bash
-colcon build --packages-select py_action_pkg
-source install/setup.bash
-ros2 run py_action_pkg fibonacci_client
-```
-
 ### Creating an Action Server in C++
 
 The action server is responsible for receiving goals, executing the long-running task, providing feedback, and sending the final result.
@@ -1998,93 +1748,9 @@ private:
       RCLCPP_WARN(this->get_logger(), "Goal order too high (%d). Rejecting.", goal->order);
       return rclcpp_action::GoalResponse::REJECT;
     }
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-  }
-
-  rclcpp_action::CancelResponse handle_cancel(
-    const std::shared_ptr<GoalHandleFibonacci> goal_handle)
-  {
-    RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
-    (void)goal_handle;
-    return rclcpp_action::CancelResponse::ACCEPT;
-  }
-
-  void handle_accepted(const std::shared_ptr<GoalHandleFibonacci> goal_handle)
-  {
-    // this needs to return quickly to avoid blocking the executor, so spin up a new thread
-    std::thread{std::bind(&FibonacciActionServer::execute, this, std::placeholders::_1), goal_handle}.detach();
-  }
-
-  void execute(const std::shared_ptr<GoalHandleFibonacci> goal_handle)
-  {
-    RCLCPP_INFO(this->get_logger(), "Executing goal with order %d", goal_handle->request.order);
-    rclcpp::Rate loop_rate(1);
-    const auto goal = goal_handle->request;
-    auto feedback = std::make_shared<Fibonacci::Feedback>();
-    auto & sequence = feedback->sequence;
-    sequence.push_back(0);
-    sequence.push_back(1);
-    auto result = std::make_shared<Fibonacci::Result>();
-
-    for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
-      if (goal_handle->is_cancel_requested) {
-        result->sequence = sequence;
-        goal_handle->canceled(result);
-        RCLCPP_INFO(this->get_logger(), "Goal canceled");
-        return;
-      }
-      sequence.push_back(sequence[i] + sequence[i - 1]);
-      goal_handle->publish_feedback(feedback);
-      RCLCPP_INFO(this->get_logger(), "Publishing feedback");
-
-      loop_rate.sleep();
-    }
-
-    if (rclcpp::ok()) {
-      result->sequence = sequence;
-      goal_handle->succeed(result);
-      RCLCPP_INFO(this->get_logger(), "Goal succeeded");
-    }
-  }
-};
-
-int main(int argc, char **argv)
-{
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<FibonacciActionServer>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}
 ```
 
-**Build and Run (C++ Action Server):**
-Assuming `tutorial_interfaces` is built, create a new C++ package (e.g., `cpp_action_pkg`) with `rclcpp`, `rclcpp_action`, `rclcpp_components`, and `tutorial_interfaces` dependencies. Place the server code in `cpp_action_pkg/src/fibonacci_server.cpp`.
-
-Update `cpp_action_pkg/CMakeLists.txt`:
-```cmake
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(tutorial_interfaces REQUIRED) # Your action interface package
-
-add_executable(fibonacci_server src/fibonacci_server.cpp)
-ament_target_dependencies(fibonacci_server rclcpp rclcpp_action rclcpp_components tutorial_interfaces)
-
-install(TARGETS
-  fibonacci_server
-  DESTINATION lib/${PROJECT_NAME}
-)
-```
-Then build and run:
-```bash
-colcon build --packages-select cpp_action_pkg
-source install/setup.bash
-ros2 run cpp_action_pkg fibonacci_server
-```
-
-### سی++ میں ایک ایکشن سرور بنانا
+**سی++ میں ایک ایکشن سرور بنانا**
 
 ایکشن سرور گولز وصول کرنے، طویل عرصے تک چلنے والے کام کو انجام دینے، فیڈ بیک فراہم کرنے، اور حتمی نتیجہ بھیجنے کا ذمہ دار ہے۔
 
@@ -2097,7 +1763,7 @@ ros2 run cpp_action_pkg fibonacci_server
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_and_component.hpp"
 
-#include "tutorial_interfaces/action/fibonacci.hpp" // اپنی ایکشن کی قسم سے تبدیل کریں
+#include "tutorial_interfaces/action/fibonacci.hpp" // Replace with your action type
 
 class FibonacciActionServer : public rclcpp::Node
 {
@@ -2129,95 +1795,11 @@ private:
   {
     RCLCPP_INFO(this->get_logger(), "Received goal request with order %d", goal->order);
     (void)uuid;
-    // بہت بڑے گولز کو مسترد کریں
+    // Let's reject goals that are too large
     if (goal->order > 50) {
       RCLCPP_WARN(this->get_logger(), "Goal order too high (%d). Rejecting.", goal->order);
       return rclcpp_action::GoalResponse::REJECT;
     }
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-  }
-
-  rclcpp_action::CancelResponse handle_cancel(
-    const std::shared_ptr<GoalHandleFibonacci> goal_handle)
-  {
-    RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
-    (void)goal_handle;
-    return rclcpp_action::CancelResponse::ACCEPT;
-  }
-
-  void handle_accepted(const std::shared_ptr<GoalHandleFibonacci> goal_handle)
-  {
-    // یہ تیزی سے واپس آنا چاہیے تاکہ ایگزیکیوٹر کو بلاک نہ کرے، لہذا ایک نیا تھریڈ شروع کریں۔
-    std::thread{std::bind(&FibonacciActionServer::execute, this, std::placeholders::_1), goal_handle}.detach();
-  }
-
-  void execute(const std::shared_ptr<GoalHandleFibonacci> goal_handle)
-  {
-    RCLCPP_INFO(this->get_logger(), "Executing goal with order %d", goal_handle->request.order);
-    rclcpp::Rate loop_rate(1);
-    const auto goal = goal_handle->request;
-    auto feedback = std::make_shared<Fibonacci::Feedback>();
-    auto & sequence = feedback->sequence;
-    sequence.push_back(0);
-    sequence.push_back(1);
-    auto result = std::make_shared<Fibonacci::Result>();
-
-    for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
-      if (goal_handle->is_cancel_requested) {
-        result->sequence = sequence;
-        goal_handle->canceled(result);
-        RCLCPP_INFO(this->get_logger(), "Goal canceled");
-        return;
-      }
-      sequence.push_back(sequence[i] + sequence[i - 1]);
-      goal_handle->publish_feedback(feedback);
-      RCLCPP_INFO(this->get_logger(), "Publishing feedback");
-
-      loop_rate.sleep();
-    }
-
-    if (rclcpp::ok()) {
-      result->sequence = sequence;
-      goal_handle->succeed(result);
-      RCLCPP_INFO(this->get_logger(), "Goal succeeded");
-    }
-  }
-};
-
-int main(int argc, char **argv)
-{
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<FibonacciActionServer>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}
-```
-
-**بنائیں اور چلائیں (سی++ ایکشن سرور):**
-یہ فرض کرتے ہوئے کہ `tutorial_interfaces` بنایا گیا ہے، `rclcpp`, `rclcpp_action`, `rclcpp_components`, اور `tutorial_interfaces` ڈیپینڈنسیز کے ساتھ ایک نیا سی++ پیکیج (مثلاً، `cpp_action_pkg`) بنائیں۔ سرور کوڈ `cpp_action_pkg/src/fibonacci_server.cpp` میں رکھیں۔
-
-`cpp_action_pkg/CMakeLists.txt` کو اپ ڈیٹ کریں:
-```cmake
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(tutorial_interfaces REQUIRED) # آپ کا ایکشن انٹرفیس پیکیج
-
-add_executable(fibonacci_server src/fibonacci_server.cpp)
-ament_target_dependencies(fibonacci_server rclcpp rclcpp_action rclcpp_components tutorial_interfaces)
-
-install(TARGETS
-  fibonacci_server
-  DESTINATION lib/${PROJECT_NAME}
-)
-```
-پھر بنائیں اور چلائیں:
-```bash
-colcon build --packages-select cpp_action_pkg
-source install/setup.bash
-ros2 run cpp_action_pkg fibonacci_server
 ```
 
 ### Creating an Action Client in C++
@@ -2267,11 +1849,11 @@ public:
     RCLCPP_INFO(this->get_logger(), "Sending goal with order %d", goal_msg.order);
 
     auto send_goal_options = rclcpp_action::Client<Fibonacci>::SendGoalOptions();
-    send_goal_options.goal_response_callback =
+    send_goal_options.goal_response_callback = 
       std::bind(&FibonacciActionClient::goal_response_callback, this, _1);
-    send_goal_options.feedback_callback =
+    send_goal_options.feedback_callback = 
       std::bind(&FibonacciActionClient::feedback_callback, this, _1, _2);
-    send_goal_options.result_callback =
+    send_goal_options.result_callback = 
       std::bind(&FibonacciActionClient::result_callback, this, _1);
     this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
   }
@@ -2358,4 +1940,3 @@ colcon build --packages-select cpp_action_pkg
 source install/setup.bash
 ros2 run cpp_action_pkg fibonacci_client
 ```
-

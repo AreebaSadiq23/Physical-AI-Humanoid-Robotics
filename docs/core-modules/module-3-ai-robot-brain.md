@@ -303,7 +303,7 @@ asyncio.run(run_simulation())
 #### اسکرپٹ کو کیسے چلائیں
 
 1.  مذکورہ بالا کوڈ کو پائیتھن فائل کے بطور محفوظ کریں (جیسے، `hello_world.py`)۔
-2.  ایک ٹرمینل کھولیں اور اپنی Isaac Sim انسٹالیشن ڈائریکٹری پر جائیں۔
+2.  ایک ٹرمینل کھولیں اور اپنی Isaac Sim انسٹالیشن ڈائرکٹری پر جائیں۔
 3.  Isaac Sim کے ساتھ فراہم کردہ `python.sh` (لینکس پر) یا `python.bat` (ونڈوز پر) ایگزیکیوٹیبل کا استعمال کرتے ہوئے اسکرپٹ چلائیں۔
 
     ```bash
@@ -427,7 +427,7 @@ Isaac GEMs کو ROS 2 ایپلی کیشن میں ضم کرنا سیدھا ہے،
 عمومی ورک فلو حسب ذیل ہے:
 
 1.  **اپنا ROS 2 ورک اسپیس ترتیب دیں:** ایک نیا ROS 2 ورک اسپیس بنائیں یا موجودہ کو استعمال کریں۔
-2.  **Isaac GEMs شامل کریں:** NVIDIA GitHub ریپوزٹری سے مطلوبہ Isaac ROS GEMs کو اپنے ورک اسپیس کی `src` ڈائریکٹری میں کلون کریں۔
+2.  **Isaac GEMs شامل کریں:** NVIDIA GitHub ریپوزٹری سے مطلوبہ Isaac ROS GEMs کو اپنے ورک اسپیس کی `src` ڈائرکٹری میں کلون کریں۔
 3.  **ورک اسپیس بنائیں:** `colcon build` کا استعمال کرتے ہوئے اپنا ورک اسپیس بنائیں۔
 4.  **ایک لانچ فائل بنائیں:** اپنے دوسرے ایپلیکیشن نوڈس کے ساتھ GEM نوڈس شروع کرنے کے لیے ایک ROS 2 لانچ فائل بنائیں۔
 
@@ -1011,3 +1011,97 @@ By combining the realistic simulation capabilities of Isaac Sim with the powerfu
 *   **تیز رفتار تکرار:** آسانی سے دستیاب مصنوعی ڈیٹا کا استعمال کرتے ہوئے ماڈل آرکیٹیکچرز اور تربیتی حکمت عملیوں کی جانچ اور اصلاح کریں۔
 
 Isaac Sim کی حقیقت پسندانہ سیمولیشن صلاحیتوں کو Isaac Replicator کی طاقتور مصنوعی ڈیٹا جنریشن خصوصیات کے ساتھ جوڑ کر، ڈویلپرز روبوٹس کے لیے جدید AI پرسیپشن سسٹمز کی ترقی اور تعیناتی کو نمایاں طور پر تیز کر سکتے ہیں۔
+---
+
+## Chapter 6: Hardware-Accelerated VSLAM with Isaac ROS
+
+Visual SLAM (Simultaneous Localization and Mapping) is a fundamental capability for autonomous robots, allowing them to build a map of an unknown environment while simultaneously tracking their own position within it. However, VSLAM is computationally intensive. NVIDIA Isaac ROS provides a hardware-accelerated VSLAM package that leverages the power of NVIDIA GPUs to run this process in real-time.
+
+### Isaac ROS VSLAM کیا ہے؟
+
+Isaac ROS VSLAM ایک ROS 2 پیکیج ہے جو ایک روبوٹ کو صرف کیمرہ ڈیٹا (اور اختیاری طور پر IMU ڈیٹا) کا استعمال کرتے ہوئے 3D میں اپنی پوزیشن کو ٹریک کرنے اور اپنے ارد گرد کے ماحول کا نقشہ بنانے کے قابل بناتا ہے۔ "ہارڈویئر-ایکسلریٹڈ" ہونے کا مطلب ہے کہ یہ NVIDIA GPUs پر متوازی طور پر چلانے کے لیے آپٹمائزڈ ہے، جو CPU پر مبنی حل کے مقابلے میں نمایاں کارکردگی میں اضافہ فراہم کرتا ہے۔
+
+### Key Features and Benefits
+
+-   **High Performance:** By offloading the heavy computation to the GPU, Isaac ROS VSLAM can achieve high frame rates and real-time performance, even on resource-constrained edge devices like the NVIDIA Jetson series.
+-   **Accuracy:** It uses advanced algorithms to provide robust and accurate tracking, minimizing drift over time.
+-   **ROS 2 Integration:** As a standard ROS 2 package, it integrates seamlessly into existing robotics applications. It subscribes to camera and IMU topics and publishes odometry, map data, and TF transforms.
+-   **Ease of Use:** It is designed to be easy to configure and run, with launch files provided for common setups (e.g., with stereo cameras like the Intel RealSense).
+
+### How it Works: The VSLAM Pipeline
+
+The Isaac ROS VSLAM pipeline typically consists of the following steps:
+
+1.  **Input:** The system takes in synchronized stereo camera images and, optionally, IMU data.
+2.  **Feature Tracking:** The GPU-accelerated node tracks visual features (distinctive points) from one camera frame to the next.
+3.  **Pose Estimation:** By observing how these features move between frames, the algorithm estimates the camera's (and thus the robot's) motion. IMU data, if available, is fused here to improve accuracy and robustness to fast movements.
+4.  **Mapping:** Keyframes (important frames with significant new information) are used to build and refine a 3D map of the environment, represented as a point cloud.
+5.  **Loop Closure:** The system periodically checks if the robot has returned to a previously visited area. If so, it performs "loop closure," correcting the accumulated drift in the map and the robot's trajectory.
+6.  **Output:** The node publishes the robot's estimated position as an odometry message, the map data, and the necessary TF transforms for use by other ROS 2 nodes, such as a navigation stack.
+
+### Example: Running Isaac ROS VSLAM
+
+Running the Isaac ROS VSLAM GEM typically involves the following:
+
+1.  **Hardware Setup:** A robot or device equipped with a supported stereo camera (e.g., Intel RealSense D435i) and an NVIDIA Jetson or other GPU-enabled computer.
+2.  **Installation:** Cloning the `isaac_ros_vslam` package and its dependencies into your ROS 2 workspace and building it.
+3.  **Launching:** Using a provided ROS 2 launch file that starts the camera driver node and the VSLAM node with the correct topic remappings and parameters.
+
+```bash
+# Example launch command
+ros2 launch isaac_ros_vslam isaac_ros_vslam_realsense.launch.py
+```
+
+Once running, you can visualize the output in RViz2, where you will see the robot's estimated trajectory and the 3D point cloud map of the environment being built in real-time.
+
+---
+
+## Chapter 7: Path Planning for Humanoids with Nav2
+
+**Nav2** is the state-of-the-art navigation stack in ROS 2. While it was primarily designed for wheeled mobile robots, its modular architecture makes it adaptable for more complex platforms, including bipedal humanoid robots. Path planning for humanoids, however, introduces unique challenges that go beyond simple 2D navigation.
+
+### ہیومنائڈز کے لیے نیویگیشن کے چیلنجز
+
+پہیوں والے روبوٹس کے برعکس، ہیومنائڈز میں ایک اعلی مرکز ثقل، ایک چھوٹا سپورٹ بیس (پاؤں) ہوتا ہے، اور انہیں گرنے سے بچنے کے لیے متحرک طور پر توازن برقرار رکھنا چاہیے۔ نیویگیشن کے لیے اس کا مطلب ہے:
+
+-   **Stability is Key:** راستہ صرف تصادم سے پاک نہیں ہونا چاہیے، بلکہ اسے روبوٹ کو مستحکم رکھنے والا بھی ہونا چاہیے۔ تیز موڑ، اچانک رکنا، یا ناہموار سطحیں روبوٹ کو گرا سکتی ہیں۔
+-   **3D Environment:** ہیومنائڈز سیڑھیاں چڑھ سکتے ہیں، رکاوٹوں پر قدم رکھ سکتے ہیں، اور جھک سکتے ہیں، لہذا منصوبہ بندی صرف 2D نقشے پر نہیں ہو سکتی۔ اسے 3D اسپیس میں ہونا چاہیے۔
+-   **Footstep Planning:** نیویگیشن کا مطلب صرف ایک راستہ تلاش کرنا نہیں ہے؛ اس کا مطلب ہے ہر پاؤں رکھنے کے لیے قابل عمل مقامات کا ایک سلسلہ تلاش کرنا۔
+-   **Whole-Body Control:** بازو کی جھول، دھڑ کی گردش، اور دیگر حرکات توازن کو متاثر کرتی ہیں اور انہیں نیویگیشن کے دوران مدنظر رکھا جانا چاہیے۔
+
+### Adapting Nav2 for Humanoid Path Planning
+
+Nav2's flexibility allows us to replace its default plugins with custom ones tailored for humanoid locomotion.
+
+#### 1. Custom Planner and Controller Plugins
+
+The core of adapting Nav2 is to create custom **Planner** and **Controller** plugins:
+
+-   **Humanoid Planner Plugin:** The global planner in Nav2 is responsible for finding a long-range path. For a humanoid, this plugin would need to:
+    -   Operate on a 3D representation of the environment.
+    -   Generate a sequence of valid **footstep locations** rather than just a 2D path.
+    -   Consider the robot's kinematics (how its legs can move) and stability constraints.
+    -   This might involve using algorithms like A* or RRT* in a 3D or "2.5D" space that accounts for terrain height and obstacles.
+
+-   **Humanoid Controller Plugin:** The local planner (controller) is responsible for executing the path and reacting to immediate obstacles. For a humanoid, this plugin would:
+    -   Take the planned footsteps as input.
+    -   Generate whole-body trajectories to move the robot from one footstep to the next while maintaining balance.
+    -   This often involves a **model predictive control (MPC)** or other advanced control techniques that can predict the robot's future state and optimize motor commands to ensure stability.
+    -   It must constantly adjust for small disturbances, just like a human does when walking.
+
+#### 2. Costmap and Behavior Tree Configuration
+
+-   **3D Costmaps:** While standard Nav2 uses 2D costmaps, a humanoid system might require a 3D costmap (or voxel grid) to understand obstacles at different heights, overhead clearance, and traversable slopes.
+-   **Custom Behaviors:** Nav2's Behavior Trees can be extended with custom nodes for humanoid-specific actions, such as `ClimbStairs`, `StepOverObstacle`, or `DuckUnderBarrier`. This allows the robot to execute complex, multi-step plans generated by an LLM or another high-level planner.
+
+### A Conceptual Humanoid Navigation Workflow
+
+1.  **Goal:** A high-level goal is sent to Nav2 (e.g., "go to the kitchen").
+2.  **Global Planner (Custom):** The humanoid footstep planner generates a sequence of target foot placements to reach the goal.
+3.  **Behavior Tree:** The BT orchestrates the process, passing the footsteps to the controller.
+4.  **Local Planner / Controller (Custom):** The humanoid whole-body controller takes the next target footstep.
+5.  **Whole-Body Control:** The controller computes the necessary joint torques and trajectories for the legs, arms, and torso to move the robot's center of mass and swing leg to the target footstep without falling.
+6.  **Execution:** The commands are sent to the robot's motors.
+7.  **Loop:** The process repeats for the next footstep, constantly re-evaluating based on sensor data.
+
+By replacing key plugins and extending its functionality, Nav2 can be transformed from a 2D navigation stack into a powerful framework for enabling stable, dynamic, and intelligent locomotion for bipedal humanoid robots.

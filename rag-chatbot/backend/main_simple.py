@@ -1,23 +1,19 @@
 import os
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
-from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 COLLECTION_NAME = "humanoid_robotics_book"
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
-# OpenRouter model - free Gemini models available
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
 
 app = FastAPI()
 
@@ -28,18 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-rag_chain = None
-error_message_init = ""
-
-@app.get("/api/health")
-async def health_check():
-    return {
-        "status": "ok",
-        "qdrant_configured": qdrant_client is not None,
-        "openrouter_configured": openrouter_client is not None,
-        "ready": qdrant_client is not None and openrouter_client is not None
-    }
 
 # Initialize Qdrant and embeddings
 qdrant_client = None
@@ -56,18 +40,6 @@ if all([QDRANT_URL, QDRANT_API_KEY]):
         print("✅ Qdrant and embeddings initialized successfully")
     except Exception as e:
         print(f"⚠️ Error initializing Qdrant: {e}")
-
-# Initialize OpenRouter client
-openrouter_client = None
-if OPENROUTER_API_KEY:
-    try:
-        openrouter_client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=OPENROUTER_API_KEY,
-        )
-        print(f"✅ OpenRouter client initialized (model: {OPENROUTER_MODEL})")
-    except Exception as e:
-        print(f"⚠️ Error initializing OpenRouter: {e}")
 
 def retrieve_chunks(query: str, k: int = 4) -> str:
     """Retrieve relevant document chunks from Qdrant"""
@@ -91,37 +63,41 @@ def retrieve_chunks(query: str, k: int = 4) -> str:
         print(f"Error retrieving chunks: {e}")
         return "Error retrieving context"
 
-def generate_answer(context: str, question: str) -> str:
-    """Generate answer using OpenRouter"""
-    if not openrouter_client:
-        return "OpenRouter API not configured. Please add OPENROUTER_API_KEY to your .env file."
+def generate_simple_response(query: str, context: str) -> str:
+    """Generate response based on retrieved context (simple extraction)"""
+    if not context or context == "No context available" or context == "Error retrieving context":
+        return "I don't have enough information in my knowledge base to answer this question. Please try asking about Physical AI, humanoid robotics, or related topics from the textbook."
     
-    prompt = f"""You are an expert assistant for the 'Physical AI & Humanoid Robotics' textbook.
-Answer ONLY from the given context.
-If the answer is not present, say you don't have enough information.
-
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:"""
+    # Extract most relevant sentences (simple approach)
+    sentences = context.split('. ')
+    query_words = set(query.lower().split())
     
-    try:
-        response = openrouter_client.chat.completions.create(
-            model=OPENROUTER_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=1000
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Error generating answer: {str(e)}"
+    # Score sentences by query word overlap
+    scored_sentences = []
+    for sentence in sentences:
+        score = sum(1 for word in query_words if word in sentence.lower())
+        scored_sentences.append((score, sentence))
+    
+    # Sort by score and take top sentences
+    scored_sentences.sort(reverse=True, key=lambda x: x[0])
+    top_sentences = [s[1] for s in scored_sentences[:3] if s[0] > 0]
+    
+    if top_sentences:
+        return '. '.join(top_sentences) + '.'
+    else:
+        return f"Based on the textbook content: {sentences[0] if sentences else 'No specific answer found.'}"
 
 class ChatRequest(BaseModel):
     query: str
     selected_text: str | None = None
+
+@app.get("/api/health")
+async def health_check():
+    return {
+        "status": "ok",
+        "qdrant_configured": qdrant_client is not None,
+        "ready": qdrant_client is not None and embeddings is not None
+    }
 
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
@@ -136,8 +112,8 @@ async def chat_endpoint(request: ChatRequest):
         # Get context from Qdrant or use selected text
         context = request.selected_text if request.selected_text else retrieve_chunks(request.query)
         
-        # Generate answer using OpenRouter
-        full_response = generate_answer(context, request.query)
+        # Generate answer
+        full_response = generate_simple_response(request.query, context)
         
         return Response(content=full_response, media_type="text/plain")
     except Exception as e:

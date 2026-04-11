@@ -34,10 +34,11 @@ def main():
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return
 
-    # Initialize Qdrant client
+    # Initialize Qdrant client with longer timeout
     client = QdrantClient(
         url=QDRANT_URL,
         api_key=QDRANT_API_KEY,
+        timeout=120  # Increased timeout for cloud uploads
     )
 
     # 1. Load Documents
@@ -68,22 +69,69 @@ def main():
 
     # 4. Ingest into Qdrant
     print(f"Checking for existing collection '{COLLECTION_NAME}'...")
-    # Delete collection if it already exists to ensure a clean re-ingestion
+    print(f"Ingesting {len(chunks)} chunks into Qdrant collection '{COLLECTION_NAME}'...")
+
+    # Create collection with proper vector size
+    from sentence_transformers import SentenceTransformer
+    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+    vector_size = model.get_sentence_embedding_dimension()
+    
+    # Delete collection if it already exists
     if client.collection_exists(collection_name=COLLECTION_NAME):
         print(f"Collection '{COLLECTION_NAME}' exists, deleting for fresh ingestion...")
         client.delete_collection(collection_name=COLLECTION_NAME)
         print(f"Collection '{COLLECTION_NAME}' deleted.")
-
-    print(f"Ingesting {len(chunks)} chunks into Qdrant collection '{COLLECTION_NAME}'...")
     
-    Qdrant.from_documents(
-        chunks,
-        embeddings,
-        url=QDRANT_URL,
-        api_key=QDRANT_API_KEY,
+    # Create collection
+    client.create_collection(
         collection_name=COLLECTION_NAME,
-        prefer_grpc=True,
+        vectors_config=models.VectorParams(
+            size=vector_size,
+            distance=models.Distance.COSINE
+        )
     )
+    
+    # Generate embeddings and upload in batches
+    batch_size = 16  # Even smaller batch size for stable uploads
+    max_retries = 3  # Retry failed batches
+    print(f"Processing {len(chunks)} chunks in batches of {batch_size}...")
+    
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i + batch_size]
+        texts = [chunk.page_content for chunk in batch]
+        metadatas = [chunk.metadata for chunk in batch]
+        
+        # Generate embeddings
+        embeddings_list = embeddings.embed_documents(texts)
+        
+        # Prepare points for upload
+        from qdrant_client.models import PointStruct
+        points = [
+            PointStruct(
+                id=i + j,
+                vector=embedding,
+                payload={"text": text, **metadata}
+            )
+            for j, (embedding, text, metadata) in enumerate(zip(embeddings_list, texts, metadatas))
+        ]
+        
+        # Upload batch with retry logic
+        for attempt in range(max_retries):
+            try:
+                client.upsert(
+                    collection_name=COLLECTION_NAME,
+                    points=points
+                )
+                print(f"Processed batch {i // batch_size + 1}/{(len(chunks) + batch_size - 1) // batch_size}")
+                break  # Success, move to next batch
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"  Retry {attempt + 1}/{max_retries} for batch {i // batch_size + 1}: {str(e)}")
+                    import time
+                    time.sleep(2)  # Wait before retry
+                else:
+                    print(f"  FAILED batch {i // batch_size + 1} after {max_retries} attempts: {str(e)}")
+                    raise  # Re-raise if all retries failed
 
     print("================================================================")
     print("✅ Ingestion complete!")

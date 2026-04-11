@@ -100,6 +100,11 @@ export default function ChatWidget() {
     setMessages(prev => [...prev, botResponse]);
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      console.log('[ChatWidget] Sending request to:', `${backendUrl}/api/chat`);
+      
       const response = await fetch(`${backendUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,7 +112,15 @@ export default function ChatWidget() {
           query: currentQuery,
           selected_text: context,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+      console.log('[ChatWidget] Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       if (!response.body) {
         throw new Error("Response body is null");
@@ -122,7 +135,7 @@ export default function ChatWidget() {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         const chunk = decoder.decode(value, { stream: !done });
-        
+
         // Update the last message (the bot's response) with the new chunk
         setMessages(prev => {
             const lastMessage = prev[prev.length - 1];
@@ -133,13 +146,18 @@ export default function ChatWidget() {
             return prev;
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        text: 'Sorry, I am having trouble connecting to the backend. Please try again later.',
-        sender: 'bot',
-      };
-      setMessages(prev => [...prev.slice(0, -1), errorMessage]);
+      
+      let errorMessage = 'Sorry, I am having trouble connecting to the backend. Please try again later.';
+      
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timed out. The backend might be processing a complex query. Please try again.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Cannot connect to backend server. Please ensure the backend is running on http://127.0.0.1:8000';
+      }
+      
+      setMessages(prev => [...prev.slice(0, -1), { text: errorMessage, sender: 'bot' }]);
     } finally {
       setIsLoading(false);
     }

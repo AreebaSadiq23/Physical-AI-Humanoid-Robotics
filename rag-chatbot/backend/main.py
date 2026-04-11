@@ -1,6 +1,6 @@
 import os
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
@@ -16,58 +16,62 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 COLLECTION_NAME = "humanoid_robotics_book"
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
-# OpenRouter model - free Gemini models available
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "mistralai/ministral-8b-2512")
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for deployment (localhost, Vercel, etc.)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-rag_chain = None
-error_message_init = ""
-
-@app.get("/api/health")
-async def health_check():
-    return {
-        "status": "ok",
-        "qdrant_configured": qdrant_client is not None,
-        "openrouter_configured": openrouter_client is not None,
-        "ready": qdrant_client is not None and openrouter_client is not None
-    }
-
-# Initialize Qdrant and embeddings
+# Lazy initialization - don't load on startup, load on first request
 qdrant_client = None
 embeddings = None
-
-if all([QDRANT_URL, QDRANT_API_KEY]):
-    try:
-        embeddings = SentenceTransformer(EMBEDDING_MODEL_NAME)
-        qdrant_client = QdrantClient(
-            url=QDRANT_URL,
-            api_key=QDRANT_API_KEY,
-            timeout=120
-        )
-        print("✅ Qdrant and embeddings initialized successfully")
-    except Exception as e:
-        print(f"⚠️ Error initializing Qdrant: {e}")
-
-# Initialize OpenRouter client
 openrouter_client = None
-if OPENROUTER_API_KEY:
-    try:
-        openrouter_client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=OPENROUTER_API_KEY,
-        )
-        print(f"✅ OpenRouter client initialized (model: {OPENROUTER_MODEL})")
-    except Exception as e:
-        print(f"⚠️ Error initializing OpenRouter: {e}")
+is_initialized = False
+
+def initialize_backend():
+    """Initialize all services on first request"""
+    global qdrant_client, embeddings, openrouter_client, is_initialized
+    
+    if is_initialized:
+        return
+    
+    print("🔄 Initializing backend services...")
+    
+    # Initialize Qdrant
+    if all([QDRANT_URL, QDRANT_API_KEY]):
+        try:
+            print("📦 Loading embeddings model (this may take a moment)...")
+            embeddings = SentenceTransformer(EMBEDDING_MODEL_NAME)
+            print("✅ Embeddings loaded")
+            
+            qdrant_client = QdrantClient(
+                url=QDRANT_URL,
+                api_key=QDRANT_API_KEY,
+                timeout=120
+            )
+            print("✅ Qdrant initialized")
+        except Exception as e:
+            print(f"❌ Qdrant init error: {e}")
+    
+    # Initialize OpenRouter
+    if OPENROUTER_API_KEY:
+        try:
+            openrouter_client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=OPENROUTER_API_KEY,
+            )
+            print(f"✅ OpenRouter initialized")
+        except Exception as e:
+            print(f"❌ OpenRouter init error: {e}")
+    
+    is_initialized = True
+    print("🚀 Backend ready!")
 
 def retrieve_chunks(query: str, k: int = 4) -> str:
     """Retrieve relevant document chunks from Qdrant"""
@@ -123,8 +127,20 @@ class ChatRequest(BaseModel):
     query: str
     selected_text: str | None = None
 
+@app.get("/api/health")
+async def health_check():
+    return {
+        "status": "ok",
+        "qdrant_configured": qdrant_client is not None,
+        "openrouter_configured": openrouter_client is not None,
+        "ready": is_initialized and qdrant_client is not None and openrouter_client is not None
+    }
+
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
+    # Initialize on first request
+    initialize_backend()
+    
     try:
         if qdrant_client is None:
             return Response(
@@ -146,3 +162,9 @@ async def chat_endpoint(request: ChatRequest):
         import traceback
         traceback.print_exc()
         return Response(content=error_msg, media_type="text/plain", status_code=500)
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    print(f"🚀 Starting server on port {port}...")
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,14 +1,6 @@
 fastapi
-uvicorn[standard]
+uvicorn
 qdrant-client
-openai # Keep for now, might be removed later if not needed
+openai
 python-dotenv
-langchain
-langchain-openai # Keep for now, might be removed later if not needed
-langchain-qdrant
-langchain-text-splitters
-asyncpg
-psycopg2-binary
-fastapi-cors
-sentence-transformers # For HuggingFaceEmbeddings
-langchain-ollama # For Ollama LLM integration
+sentence-transformers

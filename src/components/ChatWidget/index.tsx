@@ -25,8 +25,8 @@ export default function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
 
-  // Backend URL - ensure this is configured in your environment
-  const backendUrl = 'http://127.0.0.1:8000';
+  // Backend URL - from environment variable or fallback to localhost for dev
+  const backendUrl = process.env.CHAT_BACKEND_URL || 'http://127.0.0.1:8000';
 
   // --- Effect Hooks ---
 

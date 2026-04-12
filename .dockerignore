@@ -12,3 +12,7 @@ docusaurus.config.ts
 sidebars.ts
 vercel.json
 *.md
+venv
+__pycache__
+*.pyc
+.env

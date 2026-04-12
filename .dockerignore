@@ -1,0 +1,14 @@
+node_modules
+.git
+.github
+.docusaurus
+build
+static
+src
+docs
+package*.json
+tsconfig.json
+docusaurus.config.ts
+sidebars.ts
+vercel.json
+*.md

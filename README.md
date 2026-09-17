@@ -1,42 +1,83 @@
-# Website
+# Physical AI & Humanoid Robotics Textbook
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+An AI-native technical textbook dedicated to Physical AI and Humanoid Robotics.
 
-## Installation
+## Project Overview
 
-```bash
-yarn
+This project is a technical textbook built with [Docusaurus](https://docusaurus.io/), featuring integrated documentation and a Retrieval-Augmented Generation (RAG) chatbot backend to assist with textbook content.
+
+## Technologies Used
+
+- **Frontend/Docs:** React, Docusaurus 3, TypeScript, Vanilla CSS.
+- **Backend:** FastAPI (Python).
+- **RAG Chatbot:** OpenAI (via OpenRouter), Qdrant (Vector Database), SentenceTransformers.
+
+## Project Structure
+
+```text
+├── docs/             # Textbook documentation (MD/MDX files)
+├── src/              # Frontend components, pages, and themes
+├── rag-chatbot/      # RAG chatbot FastAPI backend
+├── static/           # Static assets (images, icons)
+└── docusaurus.config.ts # Docusaurus configuration
 ```
 
-## Local Development
+## Getting Started
 
-```bash
-yarn start
-```
+### Prerequisites
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+- Node.js (v20+)
+- Python (v3.10+)
 
-## Build
+### Frontend Setup
 
-```bash
-yarn build
-```
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+2. **Start development server:**
+   ```bash
+   npm start
+   ```
 
-## Deployment
+### Backend Setup
 
-Using SSH:
+The RAG chatbot backend is located in `rag-chatbot/backend/`.
 
-```bash
-USE_SSH=true yarn deploy
-```
+1. **Navigate to backend directory:**
+   ```bash
+   cd rag-chatbot/backend
+   ```
 
-Not using SSH:
+2. **Setup virtual environment (recommended):**
+   ```bash
+   python -m venv venv
+   # Activate:
+   # Windows: venv\Scripts\activate
+   # macOS/Linux: source venv/bin/activate
+   ```
 
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
-# Physical-AI-Humanoid-Robotics
+4. **Environment Variables:**
+   The backend requires the following variables defined (e.g., in a `.env` file):
+   - `QDRANT_URL`
+   - `QDRANT_API_KEY`
+   - `OPENROUTER_API_KEY`
+   - `OPENROUTER_MODEL` (Optional, defaults to `mistralai/ministral-8b-2512`)
+
+5. **Run the server:**
+   ```bash
+   python main.py
+   ```
+
+## RAG Chatbot Overview
+
+The chatbot implements a Retrieval-Augmented Generation pattern:
+1. **Query:** Receives user query from the frontend.
+2. **Retrieve:** Embeds query using `all-MiniLM-L6-v2` and searches relevant text chunks in the Qdrant vector database.
+3. **Generate:** Sends context-enriched prompt to the LLM (OpenRouter) to generate a grounded response.

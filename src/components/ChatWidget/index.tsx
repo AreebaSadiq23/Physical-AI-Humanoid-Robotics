@@ -19,11 +19,15 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [selectionButton, setSelectionButton] = useState<SelectionButton>({ visible: false, top: 0, left: 0 });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
+  
+  // Store last failed request parameters for retry
+  const lastRequestParams = useRef<{ query: string, context: string | null } | null>(null);
 
   // Backend URL - from environment variable or fallback to localhost for dev
   const backendUrl = process.env.CHAT_BACKEND_URL || 'http://127.0.0.1:8000';
@@ -49,16 +53,18 @@ export default function ChatWidget() {
   // Logic for handling text selection to show the "Ask AI" button
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection();
-    const text = selection.toString().trim();
+    const text = selection?.toString().trim();
     if (text) {
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      setSelectionButton({
-        visible: true,
-        top: window.scrollY + rect.top - 40, // Position button above the selection
-        left: window.scrollX + rect.left + (rect.width / 2) - 30, // Center the button
-      });
-      setSelectedText(text);
+      const range = selection?.getRangeAt(0);
+      if (range) {
+        const rect = range.getBoundingClientRect();
+        setSelectionButton({
+          visible: true,
+          top: window.scrollY + rect.top - 40, // Position button above the selection
+          left: window.scrollX + rect.left + (rect.width / 2) - 30, // Center the button
+        });
+        setSelectedText(text);
+      }
     } else {
       setSelectionButton({ visible: false, top: 0, left: 0 });
       setSelectedText(null);
@@ -81,18 +87,20 @@ export default function ChatWidget() {
   };
 
   // Handles the logic for sending a message to the backend and streaming the response
-  const handleSendMessage = async (e: React.FormEvent, queryOverride?: string, contextOverride?: string) => {
-    e.preventDefault();
+  const handleSendMessage = async (e?: React.FormEvent, queryOverride?: string, contextOverride?: string) => {
+    if (e) e.preventDefault();
     const currentQuery = queryOverride || inputMessage;
     if (currentQuery.trim() === '') return;
 
     const context = contextOverride || selectedText;
+    lastRequestParams.current = { query: currentQuery, context: context };
 
     // Add user message to the chat
     const userMessage: Message = { text: currentQuery, sender: 'user' };
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
+    setError(null);
     setSelectedText(null); // Clear selected text after using it
 
     // Prepare the bot's response message object
@@ -103,8 +111,6 @@ export default function ChatWidget() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      console.log('[ChatWidget] Sending request to:', `${backendUrl}/api/chat`);
-      
       const response = await fetch(`${backendUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,7 +122,6 @@ export default function ChatWidget() {
       });
 
       clearTimeout(timeoutId);
-      console.log('[ChatWidget] Response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -147,19 +152,24 @@ export default function ChatWidget() {
         });
       }
     } catch (error: any) {
-      console.error('Error sending message:', error);
-      
-      let errorMessage = 'Sorry, I am having trouble connecting to the backend. Please try again later.';
+      let errorMessage = 'Sorry, I am having trouble connecting to the backend.';
       
       if (error.name === 'AbortError') {
-        errorMessage = 'Request timed out. The backend might be processing a complex query. Please try again.';
+        errorMessage = 'Request timed out.';
       } else if (error.message.includes('fetch')) {
-        errorMessage = 'Cannot connect to backend server. Please ensure the backend is running on http://127.0.0.1:8000';
+        errorMessage = 'Cannot connect to backend server.';
       }
       
-      setMessages(prev => [...prev.slice(0, -1), { text: errorMessage, sender: 'bot' }]);
+      setError(errorMessage);
+      setMessages(prev => prev.slice(0, -1)); // Remove the empty bot response
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const retryLastRequest = () => {
+    if (lastRequestParams.current) {
+      handleSendMessage(undefined, lastRequestParams.current.query, lastRequestParams.current.context || undefined);
     }
   };
 
@@ -209,6 +219,14 @@ export default function ChatWidget() {
                 {msg.text}
               </div>
             ))}
+            {error && (
+              <div className={styles.errorMessage}>
+                <p className={styles.errorText}>{error}</p>
+                <button className={styles.retryButton} onClick={retryLastRequest}>
+                  Try Again
+                </button>
+              </div>
+            )}
             {isLoading && messages[messages.length - 1]?.sender === 'user' && (
               <div className={`${styles.message} ${styles.bot}`}>
                 <div className={styles.loadingDots}>

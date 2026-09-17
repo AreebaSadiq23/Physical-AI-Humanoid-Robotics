@@ -5,7 +5,7 @@ interface Props {
   children: ReactNode;
 }
 
-export default function RoboticNotebookLayout({ children }: Props): JSX.Element {
+export default function RoboticNotebookLayout({ children }: Props): React.ReactNode {
   return (
     <div className={styles.notebookLayout}>
       <main className={styles.mainContent}>

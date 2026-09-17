@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './styles.module.css';
 import Link from '@docusaurus/Link';
 
-export default function RoboticHero(): JSX.Element {
+export default function RoboticHero(): React.ReactNode {
   return (
     <section className={styles.heroSection}>
       <div className={styles.leftPanel}>

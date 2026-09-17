@@ -76,7 +76,7 @@ function HomepageContent() {
             <div
               key={idx}
               id={`module-${idx}`}
-              ref={(el) => (moduleRefs.current[idx] = el)}
+              ref={(el) => { moduleRefs.current[idx] = el; }}
               className={clsx(
                 styles.moduleItem,
                 { [styles.moduleItemVisible]: inView[`module-${idx}`] }

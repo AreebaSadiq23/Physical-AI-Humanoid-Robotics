@@ -1,4 +1,3 @@
-import os
 import sys
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
@@ -7,10 +6,7 @@ from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from openai import OpenAI
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+from config import settings
 
 # Create app
 app = FastAPI(title="RAG Chatbot Backend")
@@ -28,20 +24,18 @@ class ChatRequest(BaseModel):
     selected_text: str | None = None
 
 # Initialize components
-# Note: These are initialized on startup now
 EMBEDDING_MODEL_NAME = 'all-MiniLM-L6-v2'
 COLLECTION_NAME = "humanoid_robotics_book"
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "mistralai/ministral-8b-2512")
 
 embeddings = SentenceTransformer(EMBEDDING_MODEL_NAME)
 qdrant = QdrantClient(
-    url=os.getenv("QDRANT_URL"), 
-    api_key=os.getenv("QDRANT_API_KEY"), 
+    url=settings.QDRANT_URL, 
+    api_key=settings.QDRANT_API_KEY, 
     timeout=120
 )
 openai_client = OpenAI(
     base_url="https://openrouter.ai/api/v1", 
-    api_key=os.getenv("OPENROUTER_API_KEY")
+    api_key=settings.OPENROUTER_API_KEY
 )
 
 @app.get("/")
@@ -53,7 +47,7 @@ async def health():
     return {
         "status": "ok",
         "python": sys.version,
-        "port": os.environ.get("PORT", "not set")
+        "port": settings.PORT
     }
 
 @app.post("/api/chat")
@@ -81,7 +75,7 @@ Question:
 Answer:"""
         
         response = openai_client.chat.completions.create(
-            model=OPENROUTER_MODEL,
+            model=settings.OPENROUTER_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000
         )
@@ -92,5 +86,4 @@ Answer:"""
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=settings.PORT)

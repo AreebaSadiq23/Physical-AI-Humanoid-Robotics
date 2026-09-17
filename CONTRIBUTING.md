@@ -1,22 +1,61 @@
 # Contributing to Physical AI & Humanoid Robotics
 
-Thank you for your interest in contributing to this project! We welcome contributions to improve our textbook and chatbot functionality.
+Thank you for your interest in contributing! We welcome contributions to improve our technical textbook and AI-integrated systems.
 
-## How to Contribute
+## Project Overview
 
-1. **Fork the repository** to your GitHub account.
-2. **Create a new branch** for your feature or fix: `git checkout -b feature/your-feature-name`
-3. **Make your changes** while adhering to project coding standards (linting and formatting).
-4. **Run tests** (if applicable) and ensure everything builds correctly.
-5. **Commit your changes** with a descriptive message.
-6. **Push to your fork** and submit a **Pull Request** to the `main` branch.
+This project is a technical textbook built with [Docusaurus](https://docusaurus.io/), featuring a Retrieval-Augmented Generation (RAG) chatbot backend.
 
-## Standards
+## Prerequisites
 
-- **Code Style:** Please follow the existing code style. We use ESLint/Prettier for frontend and Ruff for backend.
-- **Documentation:** If you add new functionality, please update the `README.md` and appropriate documentation files in the `docs/` folder.
-- **PRs:** Keep pull requests focused on a single, independent improvement.
+- Node.js (v20+)
+- Python (v3.10+)
+
+## Local Development Setup
+
+### Frontend
+1. Install dependencies: `npm install`
+2. Start server: `npm run start`
+
+### Backend
+1. Navigate to `rag-chatbot/backend/`
+2. Create and activate a virtual environment.
+3. Install dependencies: `pip install -r requirements.txt`
+4. Run: `python main.py`
+
+## Development Commands
+
+- **Type Checking:** `npm run typecheck`
+- **Linting:** 
+  - Frontend: `npm run lint`
+  - Backend: `ruff check .` (in backend directory)
+- **Formatting:** `npm run format`
+- **Testing:** `npm run test` (Frontend)
+
+## Contribution Guidelines
+
+### Branch Naming Conventions
+Please use descriptive branch names based on the type of change:
+- `feature/<name>`
+- `fix/<name>`
+- `test/<name>`
+- `docs/<name>`
+- `chore/<name>`
+
+### Commit Messages
+Follow conventional commit patterns:
+- `feat: <description>`
+- `fix: <description>`
+- `docs: <description>`
+- `test: <description>`
+- `chore: <description>`
+
+### Pull Request Workflow
+1. Fork the repository.
+2. Create your branch.
+3. Ensure all tests and linting checks pass.
+4. Submit a Pull Request targeting the `main` branch.
+5. Keep PRs focused on a single, independent improvement.
 
 ## Reporting Issues
-
-If you find a bug or have a suggestion, please open an issue in the repository with a detailed description of the problem or feature request.
+Please open an issue with a detailed description of the problem or feature request.

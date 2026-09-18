@@ -19,9 +19,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from pydantic import BaseModel, Field, field_validator
+
 class ChatRequest(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1)
     selected_text: str | None = None
+
+    @field_validator('query')
+    @classmethod
+    def query_must_not_be_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('Query must not be empty or whitespace-only.')
+        return v.strip()
 
 # Initialize components
 EMBEDDING_MODEL_NAME = 'all-MiniLM-L6-v2'

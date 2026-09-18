@@ -1,10 +1,9 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
 
 // Define the shape of the user data
 interface User {
   username: string;
   email: string;
-  // Add other user-related fields as needed
 }
 
 // Define the shape of the AuthContext
@@ -15,8 +14,15 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
-// Create the AuthContext with a default null value
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  login: () => {},
+  logout: () => {},
+  isLoading: false,
+};
+
+// Create the AuthContext
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 // AuthProvider component
 interface AuthProviderProps {
@@ -24,32 +30,37 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Attempt to load user from localStorage on initial render
-    const storedUser = localStorage.getItem('loggedInUser');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user data:", error);
-        localStorage.removeItem('loggedInUser'); // Clear invalid data
+  // Initialize state directly, ensuring window exists
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('loggedInUser');
+      if (storedUser) {
+        try {
+          return JSON.parse(storedUser);
+        } catch (error) {
+          console.error("Failed to parse stored user data:", error);
+          localStorage.removeItem('loggedInUser');
+        }
       }
     }
-    setIsLoading(false);
-  }, []);
+    return null;
+  });
+  
+  const [isLoading] = useState(false);
 
   const login = (username: string, email: string) => {
     const newUser: User = { username, email };
     setUser(newUser);
-    localStorage.setItem('loggedInUser', JSON.stringify(newUser));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('loggedInUser', JSON.stringify(newUser));
+    }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('loggedInUser');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('loggedInUser');
+    }
   };
 
   return (
@@ -61,9 +72,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 // Custom hook to use the AuthContext
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 };

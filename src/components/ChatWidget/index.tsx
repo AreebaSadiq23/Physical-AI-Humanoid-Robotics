@@ -160,25 +160,27 @@ export default function ChatWidget() {
         </button>
       )}
 
-      <button className={styles.chatToggleButton} onClick={toggleChat} aria-label="Toggle chat">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={styles.chatIcon}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" opacity=".3"/><path d="M20.5 12c0 .35-.03.7-.08 1.04-.33-2.43-2.5-4.29-4.92-4.29-2.35 0-4.32 1.75-4.88 4.04A5.96 5.96 0 0010 11c-3.31 0-6 2.69-6 6h12.55c.57-1.12.9-2.34.9-3.64 0-.35-.03-.7-.08-1.04.33 2.43 2.5 4.29 4.92 4.29 2.35 0 4.32-1.75 4.88-4.04A5.96 5.96 0 0014 13c3.31 0 6-2.69 6-6H7.45c-.57 1.12-.9 2.34-.9 3.64zM12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      <button className={styles.chatToggleButton} onClick={toggleChat} aria-label="Toggle chat" aria-expanded={isOpen}>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={styles.chatIcon} aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" opacity=".3"/><path d="M20.5 12c0 .35-.03.7-.08 1.04-.33-2.43-2.5-4.29-4.92-4.29-2.35 0-4.32 1.75-4.88 4.04A5.96 5.96 0 0010 11c-3.31 0-6 2.69-6 6h12.55c.57-1.12.9-2.34.9-3.64 0-.35-.03-.7-.08-1.04.33 2.43 2.5 4.29 4.92 4.29 2.35 0 4.32-1.75 4.88-4.04A5.96 5.96 0 0014 13c3.31 0 6-2.69 6-6H7.45c-.57 1.12-.9 2.34-.9 3.64zM12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
       </button>
 
       {isOpen && (
-        <div className={styles.chatWindow}>
+        <div className={styles.chatWindow} role="dialog" aria-labelledby="chat-title">
           <div className={styles.chatHeader}>
-            <h3>AI Assistant</h3>
+            <h3 id="chat-title">AI Assistant</h3>
             <button onClick={toggleChat} className={styles.closeButton} aria-label="Close chat">&times;</button>
           </div>
-          <div className={styles.chatMessages}>
+          <div className={styles.chatMessages} role="log" aria-live="polite">
             {messages.map((msg, index) => (
               <div key={index} className={`${styles.message} ${styles[msg.sender]}`}>
+                <span className="sr-only">{msg.sender === 'user' ? 'You:' : 'Assistant:'}</span>
                 {msg.text}
               </div>
             ))}
             {isLoading && (
               <div className={`${styles.message} ${styles.bot} ${styles.loadingState}`}>
-                <div className={styles.loadingDots}>
+                <span className="sr-only">Assistant is thinking...</span>
+                <div className={styles.loadingDots} aria-hidden="true">
                   <span></span><span></span><span></span>
                 </div>
               </div>
@@ -192,7 +194,9 @@ export default function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
           <form onSubmit={handleSendMessage} className={styles.chatInputForm}>
+            <label htmlFor="chat-input" className="sr-only">Type your question</label>
             <input
+              id="chat-input"
               ref={chatInputRef}
               type="text"
               value={inputMessage}
@@ -202,7 +206,7 @@ export default function ChatWidget() {
               disabled={isLoading}
             />
             <button type="submit" className={styles.sendButton} disabled={isLoading || inputMessage.trim() === ''} aria-label="Send message">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
           </form>
         </div>

@@ -1,7 +1,25 @@
 /**
- * @file: src/css/custom.css
- * @description: Global styles for the robotic-themed notebook.
+ * Custom global styles for the robotic-themed notebook.
  */
+
+/* Accessibility utility class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Ensure focus states are visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
 
 /* Import a futuristic font from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Chakra+Petch:wght@400;600&display=swap');

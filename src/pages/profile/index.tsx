@@ -6,18 +6,16 @@ import { useHistory } from '@docusaurus/router';
 import styles from './styles.module.css';
 
 function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const history = useHistory();
 
   useEffect(() => {
     if (!isLoading && !user) {
-      // If not loading and no user is logged in, redirect to login page
       history.push('/login');
     }
   }, [user, isLoading, history]);
 
   if (isLoading || !user) {
-    // Show a loading state or nothing while redirecting
     return (
       <Layout title="Profile" description="User Profile">
         <main>
@@ -29,27 +27,36 @@ function ProfilePage() {
     );
   }
 
+  const handleLogout = () => {
+    logout();
+    history.push('/login');
+  };
+
   return (
     <Layout title="Profile" description="User Profile">
-      <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container">
-          <h1 className="hero__title">Welcome, {user.username}!</h1>
-          <p className="hero__subtitle">Your Profile</p>
-        </div>
-      </header>
       <main>
         <section className={styles.profileSection}>
           <div className="container">
             <div className="row">
-              <div className={clsx('col col--6 col--offset-3', styles.profileCard)}>
-                <h2>Profile Details</h2>
-                <div className={styles.profileDetail}>
-                  <strong>Username:</strong> {user.username}
+              <div className={clsx('col col--4 col--offset-4', styles.profileCard)}>
+                <div className={styles.avatar}>{user.username.charAt(0).toUpperCase()}</div>
+                <h1>{user.username}</h1>
+                <p>Member Profile</p>
+                
+                <div className={styles.profileDetails}>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Username</span>
+                    <span className={styles.detailValue}>{user.username}</span>
+                  </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Email</span>
+                    <span className={styles.detailValue}>{user.email}</span>
+                  </div>
                 </div>
-                <div className={styles.profileDetail}>
-                  <strong>Email:</strong> {user.email}
-                </div>
-                {/* Add more profile details here if the 'User' interface is extended */}
+
+                <button onClick={handleLogout} className={styles.logoutButton}>
+                  Logout
+                </button>
               </div>
             </div>
           </div>
